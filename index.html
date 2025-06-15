@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSim API Explorer - Feed & Metadata Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e6ed;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: transparent;
+            color: #a0a6b0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .section {
+            display: none;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-group label {
+            font-weight: 600;
+            color: #b0b6c0;
+            font-size: 0.9rem;
+        }
+        
+        select, input, button {
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e6ed;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .results {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .result-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .result-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+        
+        .result-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        
+        .result-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #a0a6b0;
+        }
+        
+        .result-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 0.85rem;
+            color: #7c8792;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            font-size: 1.1rem;
+            color: #667eea;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #fca5a5;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            margin-top: 15px;
+        }
+        
+        .feed-type-info {
+            background: rgba(34, 197, 94, 0.1);
+            color: #86efac;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .api-endpoint {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .username {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .result-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WebSim API Explorer</h1>
+            <p>Explore feed algorithms, search capabilities, and metadata extraction</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('feeds')">Feed Analysis</button>
+            <button class="tab" onclick="showTab('search')">Search & Discovery</button>
+            <button class="tab" onclick="showTab('metadata')">Metadata Deep Dive</button>
+            <button class="tab" onclick="showTab('comparison')">Algorithm Comparison</button>
+        </div>
+        
+        <div id="feeds" class="section active">
+            <h2>Feed Algorithm Analysis</h2>
+            <div class="feed-type-info">
+                <strong>Available Feed Types:</strong> hot, new, top, engaging, viral, featured, recommended, following, recently_played, most_replayed
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="feedType">Feed Algorithm:</label>
+                    <select id="feedType">
+                        <option value="hot">Hot (Default)</option>
+                        <option value="new">New</option>
+                        <option value="top">Top</option>
+                        <option value="engaging">Engaging</option>
+                        <option value="engaging_mobile">Engaging Mobile</option>
+                        <option value="viral">Viral</option>
+                        <option value="multiplayer_active_sessions">Multiplayer Active</option>
+                        <option value="hot_desktop">Hot Desktop</option>
+                        <option value="hot_mobile">Hot Mobile</option>
+                        <option value="hot_mobile_unplayed">Hot Mobile Unplayed</option>
+                        <option value="featured_desktop">Featured Desktop</option>
+                        <option value="featured_mobile">Featured Mobile</option>
+                        <option value="recommended">Recommended</option>
+                        <option value="following">Following</option>
+                        <option value="recently_played">Recently Played</option>
+                        <option value="most_replayed">Most Replayed</option>
+                        <option value="most_replayed_mobile">Most Replayed Mobile</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="timeRange">Time Range:</label>
+                    <select id="timeRange">
+                        <option value="all">All Time</option>
+                        <option value="day">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="limit">Results Limit:</label>
+                    <select id="limit">
+                        <option value="12">12 (Default)</option>
+                        <option value="6">6</option>
+                        <option value="24">24</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="isMultiplayer">Multiplayer Filter:</label>
+                    <select id="isMultiplayer">
+                        <option value="">All</option>
+                        <option value="true">Multiplayer Only</option>
+                        <option value="false">Single Player Only</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="fetchTrendingFeed()">Analyze Feed Algorithm</button>
+            
+            <div id="feedResults" class="results" style="display: none;"></div>
+        </div>
+        
+        <div id="search" class="section">
+            <h2>Search & Discovery</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="searchQuery">Search Query:</label>
+                    <input type="text" id="searchQuery" placeholder="e.g., 'game', 'calculator', '3d'">
+                </div>
+                
+                <div class="control-group">
+                    <label for="searchSort">Sort By:</label>
+                    <select id="searchSort">
+                        <option value="best">Best Match</option>
+                        <option value="newest">Newest</option>
+                        <option value="best_template">Best Template</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="searchRange">Time Range:</label>
+                    <select id="searchRange">
+                        <option value="all">All Time</option>
+                        <option value="day">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="performSearch()">Search Projects</button>
+            <button onclick="getTopSearches()">Get Top Searches</button>
+            <button onclick="getRelatedKeywords()">Get Related Keywords</button>
+            
+            <div id="searchResults" class="results" style="display: none;"></div>
+        </div>
+        
+        <div id="metadata" class="section">
+            <h2>Metadata Deep Dive</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="projectId">Project ID:</label>
+                    <input type="text" id="projectId" placeholder="Enter project ID (20 chars)">
+                </div>
+                
+                <div class="control-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" placeholder="Enter username">
+                </div>
+            </div>
+            
+            <button onclick="analyzeProject()">Analyze Project Metadata</button>
+            <button onclick="analyzeUser()">Analyze User Profile</button>
+            <button onclick="getActivityFeed()">Get Activity Feed</button>
+            
+            <div id="metadataResults" class="results" style="display: none;"></div>
+        </div>
+        
+        <div id="comparison" class="section">
+            <h2>Algorithm Comparison</h2>
+            <p>Compare how different feed algorithms rank the same content</p>
+            
+            <button onclick="compareAlgorithms()">Compare Feed Algorithms</button>
+            
+            <div id="comparisonResults" class="results" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+        
+        function showLoading(containerId) {
+            const container = document.getElementById(containerId);
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading...
+                </div>
+            `;
+        }
+        
+        function showError(containerId, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="error">Error: ${message}</div>`;
+        }
+        
+        async function fetchTrendingFeed() {
+            showLoading('feedResults');
+            
+            const feedType = document.getElementById('feedType').value;
+            const range = document.getElementById('timeRange').value;
+            const limit = document.getElementById('limit').value;
+            const isMultiplayer = document.getElementById('isMultiplayer').value;
+            
+            try {
+                let url = `/api/v1/feed/trending?feed=${feedType}&range=${range}&limit=${limit}`;
+                if (isMultiplayer) {
+                    url += `&is_multiplayer=${isMultiplayer}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                displayFeedResults(data, feedType);
+            } catch (error) {
+                showError('feedResults', error.message);
+            }
+        }
+        
+        function displayFeedResults(data, feedType) {
+            const container = document.getElementById('feedResults');
+            
+            if (!data.feed || !data.feed.data.length) {
+                container.innerHTML = '<div class="error">No results found</div>';
+                return;
+            }
+            
+            const feedInfo = getFeedAlgorithmInfo(feedType);
+            
+            let html = `
+                <div class="api-endpoint">GET /api/v1/feed/trending?feed=${feedType}</div>
+                <div class="feed-type-info">
+                    <strong>${feedInfo.name}:</strong> ${feedInfo.description}
+                </div>
+                <p><strong>Results:</strong> ${data.feed.data.length} projects</p>
+            `;
+            
+            data.feed.data.forEach((item, index) => {
+                const site = item.site;
+                const project = item.project;
+                const stats = item;
+                
+                html += `
+                    <div class="result-item">
+                        <div class="result-title">${site.title || 'Untitled Project'}</div>
+                        <div class="result-meta">
+                            <div class="user-info">
+                                <img src="https://images.websim.com/avatar/${project.created_by.username}" 
+                                     alt="${project.created_by.username}" class="user-avatar">
+                                <span class="username">@${project.created_by.username}</span>
+                            </div>
+                            <span>Rank: #${index + 1}</span>
+                            <span>Created: ${new Date(project.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat">👀 ${stats.views} views</div>
+                            <div class="stat">❤️ ${stats.likes} likes</div>
+                            <div class="stat">💬 ${stats.comments} comments</div>
+                            <div class="stat">🔄 ${stats.remixes} remixes</div>
+                            ${stats.active_players > 0 ? `<div class="stat">🎮 ${stats.active_players} playing</div>` : ''}
+                        </div>
+                        <div style="margin-top: 10px; font-size: 0.85rem; color: #7c8792;">
+                            Project ID: ${project.id} | Site ID: ${site.id}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function getFeedAlgorithmInfo(feedType) {
+            const algorithms = {
+                'hot': {
+                    name: 'Hot Algorithm',
+                    description: 'Combines recent popularity with engagement velocity. Prioritizes content that\'s trending upward.'
+                },
+                'new': {
+                    name: 'New Algorithm',
+                    description: 'Shows the most recently created content, regardless of popularity.'
+                },
+                'top': {
+                    name: 'Top Algorithm',
+                    description: 'Ranks by total engagement metrics (views, likes, comments) over time.'
+                },
+                'engaging': {
+                    name: 'Engaging Algorithm',
+                    description: 'Prioritizes content with high engagement rates and user interaction.'
+                },
+                'viral': {
+                    name: 'Viral Algorithm',
+                    description: 'Identifies content with exponential growth patterns and rapid spread.'
+                },
+                'featured': {
+                    name: 'Featured Algorithm',
+                    description: 'Curated content selected by the platform for quality and innovation.'
+                },
+                'recommended': {
+                    name: 'Recommended Algorithm',
+                    description: 'Personalized recommendations based on user behavior and preferences.'
+                }
+            };
+            
+            return algorithms[feedType] || { name: feedType, description: 'Custom algorithm variant' };
+        }
+        
+        async function performSearch() {
+            const query = document.getElementById('searchQuery').value;
+            if (!query.trim()) {
+                alert('Please enter a search query');
+                return;
+            }
+            
+            showLoading('searchResults');
+            
+            const sort = document.getElementById('searchSort').value;
+            const range = document.getElementById('searchRange').value;
+            
+            try {
+                const url = `/api/v1/feed/search/${sort}/${encodeURIComponent(query)}?range=${range}&limit=20`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                displaySearchResults(data, query, sort);
+            } catch (error) {
+                showError('searchResults', error.message);
+            }
+        }
+        
+        function displaySearchResults(data, query, sort) {
+            const container = document.getElementById('searchResults');
+            
+            if (!data.feed || !data.feed.data.length) {
+                container.innerHTML = `<div class="error">No results found for "${query}"</div>`;
+                return;
+            }
+            
+            let html = `
+                <div class="api-endpoint">GET /api/v1/feed/search/${sort}/${encodeURIComponent(query)}</div>
+                <p><strong>Search Results for "${query}":</strong> ${data.feed.data.length} projects (sorted by ${sort})</p>
+            `;
+            
+            data.feed.data.forEach((item, index) => {
+                const site = item.site;
+                const project = item.project;
+                
+                html += `
+                    <div class="result-item">
+                        <div class="result-title">${site.title || 'Untitled Project'}</div>
+                        <div class="result-meta">
+                            <div class="user-info">
+                                <img src="https://images.websim.com/avatar/${project.created_by.username}" 
+                                     alt="${project.created_by.username}" class="user-avatar">
+                                <span class="username">@${project.created_by.username}</span>
+                            </div>
+                            <span>Result #${index + 1}</span>
+                            <a href="https://websim.com/c/${site.id}" target="_blank" style="color: #667eea;">View Project</a>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat">👀 ${item.views} views</div>
+                            <div class="stat">❤️ ${item.likes} likes</div>
+                            <div class="stat">💬 ${item.comments} comments</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        async function getTopSearches() {
+            showLoading('searchResults');
+            
+            try {
+                const response = await fetch('/api/v1/search/top?limit=20');
+                const data = await response.json();
+                
+                displayTopSearches(data);
+            } catch (error) {
+                showError('searchResults', error.message);
+            }
+        }
+        
+        function displayTopSearches(data) {
+            const container = document.getElementById('searchResults');
+            
+            let html = `
+                <div class="api-endpoint">GET /api/v1/search/top</div>
+                <p><strong>Top Search Queries Today:</strong></p>
+            `;
+            
+            data.data.forEach((item, index) => {
+                html += `
+                    <div class="result-item">
+                        <div class="result-title">"${item.query}"</div>
+                        <div class="result-meta">
+                            <span>Daily Rank: #${item.daily_rank}</span>
+                            <span>Position: ${index + 1}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        async function getRelatedKeywords() {
+            const query = document.getElementById('searchQuery').value;
+            if (!query.trim()) {
+                alert('Please enter a search query first');
+                return;
+            }
+            
+            showLoading('searchResults');
+            
+            try {
+                const response = await fetch(`/api/v1/search/related?q=${encodeURIComponent(query)}&limit=15`);
+                const data = await response.json();
+                
+                displayRelatedKeywords(data, query);
+            } catch (error) {
+                showError('searchResults', error.message);
+            }
+        }
+        
+        function displayRelatedKeywords(data, query) {
+            const container = document.getElementById('searchResults');
+            
+            let html = `
+                <div class="api-endpoint">GET /api/v1/search/related?q=${encodeURIComponent(query)}</div>
+                <p><strong>Related Keywords for "${query}":</strong> ${data.total_results} total associations</p>
+            `;
+            
+            data.keywords.forEach((item, index) => {
+                html += `
+                    <div class="result-item">
+                        <div class="result-title">${item.keyword}</div>
+                        <div class="result-stats">
+                            <div class="stat">🔗 ${item.cooccurrence_count} co-occurrences</div>
+                            <div class="stat">📊 ${item.relevance_percentage.toFixed(1)}% relevance</div>
+                            <div class="stat">📈 ${item.lift_score.toFixed(2)} lift score</div>
+                            <div class="stat">⭐ ${item.combined_score.toFixed(2)} combined score</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        async function analyzeProject() {
+            const projectId = document.getElementById('projectId').value;
+            if (!projectId.trim() || projectId.length !== 20) {
+                alert('Please enter a valid 20-character project ID');
+                return;
+            }
+            
+            showLoading('metadataResults');
+            
+            try {
+                // Fetch project details
+                const projectResponse = await fetch(`/api/v1/projects/${projectId}`);
+                const projectData = await projectResponse.json();
+                
+                // Fetch project stats
+                const statsResponse = await fetch(`/api/v1/projects/${projectId}/stats`);
+                const statsData = await statsResponse.json();
+                
+                // Fetch project comments
+                const commentsResponse = await fetch(`/api/v1/projects/${projectId}/comments?first=5`);
+                const commentsData = await commentsResponse.json();
+                
+                displayProjectAnalysis(projectData, statsData, commentsData);
+            } catch (error) {
+                showError('metadataResults', error.message);
+            }
+        }
+        
+        function displayProjectAnalysis(projectData, statsData, commentsData) {
+            const container = document.getElementById('metadataResults');
+            const project = projectData.project;
+            const site = projectData.site;
+            
+            let html = `
+                <div class="api-endpoint">GET /api/v1/projects/${project.id}</div>
+                <div class="result-item">
+                    <div class="result-title">${project.title || 'Untitled Project'}</div>
+                    <div class="result-meta">
+                        <div class="user-info">
+                            <img src="https://images.websim.com/avatar/${project.created_by.username}" 
+                                 alt="${project.created_by.username}" class="user-avatar">
+                            <span class="username">@${project.created_by.username}</span>
+                        </div>
+                        <span>Created: ${new Date(project.created_at).toLocaleDateString()}</span>
+                        <span>Updated: ${new Date(project.updated_at).toLocaleDateString()}</span>
+                    </div>
+                    <div class="result-stats">
+                        <div class="stat">👀 ${project.stats.views} total views</div>
+                        <div class="stat">❤️ ${project.stats.likes} likes</div>
+                        <div class="stat">💬 ${project.stats.comments} comments</div>
+                        <div class="stat">🔄 Version ${project.current_version}</div>
+                        <div class="stat">📊 ${project.visibility} visibility</div>
+                    </div>
+                    ${project.description ? `<p style="margin-top: 10px; color: #a0a6b0;">${project.description}</p>` : ''}
+                </div>
+            `;
+            
+            // Add detailed stats if available
+            if (statsData.daily_stats && statsData.daily_stats.length > 0) {
+                html += `
+                    <h3 style="margin: 20px 0 15px 0; color: #fff;">Daily Performance (Last 7 Days)</h3>
+                `;
+                
+                statsData.daily_stats.slice(-7).forEach(day => {
+                    html += `
+                        <div class="result-item">
+                            <div class="result-title">${day.day}</div>
+                            <div class="result-stats">
+                                <div class="stat">👀 ${day.views || 0} views</div>
+                                <div class="stat">💰 ${(day.engagement_rewards_earned || 0).toFixed(2)} rewards</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Add top referrers
+            if (statsData.top_referrers && statsData.top_referrers.length > 0) {
+                html += `<h3 style="margin: 20px 0 15px 0; color: #fff;">Top Traffic Sources</h3>`;
+                statsData.top_referrers.slice(0, 5).forEach(ref => {
+                    html += `
+                        <div class="result-item">
+                            <div class="result-title">${ref.referrer || 'Direct'}</div>
+                            <div class="stat">👀 ${ref.views} views</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Add recent comments
+            if (commentsData.comments && commentsData.comments.data.length > 0) {
+                html += `<h3 style="margin: 20px 0 15px 0; color: #fff;">Recent Comments</h3>`;
+                commentsData.comments.data.forEach(commentItem => {
+                    const comment = commentItem.comment;
+                    html += `
+                        <div class="result-item">
+                            <div class="result-meta">
+                                <div class="user-info">
+                                    <img src="https://images.websim.com/avatar/${comment.author.username}" 
+                                         alt="${comment.author.username}" class="user-avatar">
+                                    <span class="username">@${comment.author.username}</span>
+                                </div>
+                                <span>${new Date(comment.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <p style="color: #e0e6ed; margin-top: 8px;">${comment.raw_content || 'Comment content unavailable'}</p>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        async function analyzeUser() {
+            const username = document.getElementById('username').value;
+            if (!username.trim()) {
+                alert('Please enter a username');
+                return;
+            }
+            
+            showLoading('metadataResults');
+            
+            try {
+                // Fetch user details
+                const userResponse = await fetch(`/api/v1/users/${username}`);
+                const userData = await userResponse.json();
+                
+                // Fetch user projects
+                const projectsResponse = await fetch(`/api/v1/users/${username}/projects?first=10&posted=true`);
+                const projectsData = await projectsResponse.json();
+                
+                // Fetch user stats
+                const statsResponse = await fetch(`/api/v1/users/${username}/stats`);
+                const statsData = await statsResponse.json();
+                
+                displayUserAnalysis(userData, projectsData, statsData);
+            } catch (error) {
+                showError('metadataResults', error.message);
+            }
+        }
+        
+        function displayUserAnalysis(userData, projectsData, statsData) {
+            const container = document.getElementById('metadataResults');
+            const user = userData.user;
+            
+            let html = `
+                <div class="api-endpoint">GET /api/v1/users/${user.username}</div>
+                <div class="result-item">
+                    <div class="result-title">@${user.username}</div>
+                    <div class="result-meta">
+                        <div class="user-info">
+                            <img src="https://images.websim.com/avatar/${user.username}" 
+                                 alt="${user.username}" class="user-avatar">
+                        </div>
+                        <span>Joined: ${new Date(user.created_at).toLocaleDateString()}</span>
+                        ${user.twitter ? `<span>Twitter: @${user.twitter}</span>` : ''}
+                    </div>
+                    <div class="result-stats">
+                        <div class="stat">👀 ${statsData.stats.total_views} total views</div>
+                        <div class="stat">❤️ ${statsData.stats.total_likes} total likes</div>
+                        <div class="stat">📝 ${projectsData.projects.data.length} public projects</div>
+                    </div>
+                    ${user.description ? `<p style="margin-top: 10px; color: #a0a6b0;">${user.description}</p>` : ''}
+                </div>
+            `;
+            
+            // Add recent projects
+            if (projectsData.projects.data.length > 0) {
+                html += `<h3 style="margin: 20px 0 15px 0; color: #fff;">Recent Projects</h3>`;
+                projectsData.projects.data.forEach(projectItem => {
+                    const project = projectItem.project;
+                    html += `
+                        <div class="result-item">
+                            <div class="result-title">${project.title || 'Untitled Project'}</div>
+                            <div class="result-meta">
+                                <span>Created: ${new Date(project.created_at).toLocaleDateString()}</span>
+                                <span>Updated: ${new Date(project.updated_at).toLocaleDateString()}</span>
+                            </div>
+                            <div class="result-stats">
+                                <div class="stat">👀 ${project.stats.views} views</div>
+                                <div class="stat">❤️ ${project.stats.likes} likes</div>
+                                <div class="stat">💬 ${project.stats.comments} comments</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        async function getActivityFeed() {
+            showLoading('metadataResults');
+            
+            try {
+                const response = await fetch('/api/v1/activity-feed');
+                const data = await response.json();
+                
+                displayActivityFeed(data);
+            } catch (error) {
+                showError('metadataResults', error.message);
+            }
+        }
+        
+        function displayActivityFeed(data) {
+            const container = document.getElementById('metadataResults');
+            
+            let html = `
+                <div class="api-endpoint">GET /api/v1/activity-feed</div>
+                <p><strong>Recent Platform Activity</strong></p>
+            `;
+            
+            if (data.length === 0) {
+                html += '<div class="error">No activity data available</div>';
+            } else {
+                data.forEach((activity, index) => {
+                    html += `
+                        <div class="result-item">
+                            <div class="result-title">Activity ${index + 1}</div>
+                            <pre style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; font-size: 0.85rem; overflow-x: auto;">${JSON.stringify(activity, null, 2)}</pre>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        async function compareAlgorithms() {
+            showLoading('comparisonResults');
+            
+            const algorithms = ['hot', 'new', 'top', 'engaging', 'viral'];
+            const results = {};
+            
+            try {
+                // Fetch results from multiple algorithms
+                for (const algorithm of algorithms) {
+                    const response = await fetch(`/api/v1/feed/trending?feed=${algorithm}&limit=10`);
+                    const data = await response.json();
+                    results[algorithm] = data.feed.data;
+                }
+                
+                displayAlgorithmComparison(results);
+            } catch (error) {
+                showError('comparisonResults', error.message);
+            }
+        }
+        
+        function displayAlgorithmComparison(results) {
+            const container = document.getElementById('comparisonResults');
+            
+            let html = `
+                <h3 style="margin-bottom: 20px; color: #fff;">Algorithm Comparison - Top 5 Results</h3>
+            `;
+            
+            // Create a side-by-side comparison
+            for (let i = 0; i < 5; i++) {
+                html += `<div style="margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px;">`;
+                html += `<h4 style="color: #667eea; margin-bottom: 15px;">Position #${i + 1}</h4>`;
+                html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">`;
+                
+                Object.entries(results).forEach(([algorithm, data]) => {
+                    const item = data[i];
+                    if (item) {
+                        html += `
+                            <div class="result-item" style="margin: 0;">
+                                <div style="font-weight: bold; color: #667eea; margin-bottom: 5px;">${algorithm.toUpperCase()}</div>
+                                <div style="font-size: 0.9rem; margin-bottom: 5px;">${item.site.title || 'Untitled'}</div>
+                                <div style="font-size: 0.8rem; color: #7c8792;">@${item.project.created_by.username}</div>
+                                <div style="font-size: 0.75rem; color: #7c8792; margin-top: 5px;">
+                                    👀 ${item.views} | ❤️ ${item.likes}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        html += `<div class="result-item" style="margin: 0; opacity: 0.5;">No result</div>`;
+                    }
+                });
+                
+                html += `</div></div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
