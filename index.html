@@ -264,6 +264,7 @@
             font-size: 0.85rem;
             margin-bottom: 15px;
             border-left: 3px solid #667eea;
+            white-space: pre-wrap;
         }
         
         .user-avatar {
@@ -496,15 +497,56 @@
             const isMultiplayer = document.getElementById('isMultiplayer').value;
             
             try {
-                let url = `/api/v1/feed/trending?feed=${feedType}&range=${range}&limit=${limit}`;
-                if (isMultiplayer) {
-                    url += `&is_multiplayer=${isMultiplayer}`;
+                if (range === 'week') { // This is for "This Week (inclusive)"
+                    const baseUrl = `/api/v1/feed/trending?feed=${feedType}&limit=${limit}${isMultiplayer ? `&is_multiplayer=${isMultiplayer}` : ''}`;
+                    const weekUrl = `${baseUrl}&range=week`;
+                    const dayUrl = `${baseUrl}&range=day`;
+
+                    const [weekResponse, dayResponse] = await Promise.all([
+                        fetch(weekUrl),
+                        fetch(dayUrl)
+                    ]);
+
+                    if (!weekResponse.ok || !dayResponse.ok) {
+                        let error = 'Failed to fetch combined week data. ';
+                        if (!weekResponse.ok) error += `Week data: ${weekResponse.statusText}. `;
+                        if (!dayResponse.ok) error += `Today data: ${dayResponse.statusText}.`;
+                        throw new Error(error);
+                    }
+
+                    const weekData = await weekResponse.json();
+                    const dayData = await dayResponse.json();
+
+                    const dayResults = dayData.feed?.data || [];
+                    const weekResults = weekData.feed?.data || [];
+
+                    const combinedResults = [...dayResults];
+                    const dayProjectIds = new Set(dayResults.map(item => item.project.id));
+
+                    for (const item of weekResults) {
+                        if (item.project && !dayProjectIds.has(item.project.id)) {
+                            combinedResults.push(item);
+                        }
+                    }
+
+                    const combinedData = { feed: { data: combinedResults } };
+                    const description = `Custom logic for 'This Week (inclusive)':\n1. GET ${dayUrl}\n2. GET ${weekUrl}\nResults merged, with "today" taking precedence.`;
+                    displayFeedResults(combinedData, feedType, description);
+
+                } else {
+                    let url = `/api/v1/feed/trending?feed=${feedType}&range=${range}&limit=${limit}`;
+                    if (isMultiplayer) {
+                        url += `&is_multiplayer=${isMultiplayer}`;
+                    }
+                    
+                    const response = await fetch(url);
+                     if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    
+                    displayFeedResults(data, feedType, `GET ${url}`);
                 }
-                
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                displayFeedResults(data, feedType, url);
             } catch (error) {
                 showError('feedResults', error.message);
             }
@@ -521,7 +563,7 @@
             const feedInfo = getFeedAlgorithmInfo(feedType);
             
             let html = `
-                <div class="api-endpoint">GET ${url}</div>
+                <div class="api-endpoint">${url}</div>
                 <div class="feed-type-info">
                     <strong>${feedInfo.name}:</strong> ${feedInfo.description}
                 </div>
