@@ -156,8 +156,11 @@
         }
         
         .result-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
             background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
+            padding: 15px;
             margin-bottom: 15px;
             border-radius: 12px;
             border-left: 4px solid #667eea;
@@ -167,6 +170,19 @@
         .result-item:hover {
             background: rgba(255, 255, 255, 0.08);
             transform: translateX(5px);
+        }
+        
+        .result-thumbnail {
+            width: 160px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 8px;
+            flex-shrink: 0;
+            background-color: rgba(0,0,0,0.2);
+        }
+        
+        .result-item-content {
+            flex: 1;
         }
         
         .result-title {
@@ -519,25 +535,28 @@
                 
                 html += `
                     <div class="result-item">
-                        <div class="result-title">${site.title || 'Untitled Project'}</div>
-                        <div class="result-meta">
-                            <div class="user-info">
-                                <img src="https://images.websim.com/avatar/${project.created_by.username}" 
-                                     alt="${project.created_by.username}" class="user-avatar">
-                                <span class="username">@${project.created_by.username}</span>
+                        <img src="https://images.websim.com/v1/site/${site.id}/600" alt="${site.title || 'Project thumbnail'}" class="result-thumbnail">
+                        <div class="result-item-content">
+                            <div class="result-title">${site.title || 'Untitled Project'}</div>
+                            <div class="result-meta">
+                                <div class="user-info">
+                                    <img src="https://images.websim.com/avatar/${project.created_by.username}" 
+                                         alt="${project.created_by.username}" class="user-avatar">
+                                    <span class="username">@${project.created_by.username}</span>
+                                </div>
+                                <span>Rank: #${index + 1}</span>
+                                <span>Created: ${new Date(project.created_at).toLocaleDateString()}</span>
                             </div>
-                            <span>Rank: #${index + 1}</span>
-                            <span>Created: ${new Date(project.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <div class="result-stats">
-                            <div class="stat">👀 ${stats.views} views</div>
-                            <div class="stat">❤️ ${stats.likes} likes</div>
-                            <div class="stat">💬 ${stats.comments} comments</div>
-                            <div class="stat">🔄 ${stats.remixes} remixes</div>
-                            ${stats.active_players > 0 ? `<div class="stat">🎮 ${stats.active_players} playing</div>` : ''}
-                        </div>
-                        <div style="margin-top: 10px; font-size: 0.85rem; color: #7c8792;">
-                            Project ID: ${project.id} | Site ID: ${site.id}
+                            <div class="result-stats">
+                                <div class="stat">👀 ${stats.views} views</div>
+                                <div class="stat">❤️ ${stats.likes} likes</div>
+                                <div class="stat">💬 ${stats.comments} comments</div>
+                                <div class="stat">🔄 ${stats.remixes} remixes</div>
+                                ${stats.active_players > 0 ? `<div class="stat">🎮 ${stats.active_players} playing</div>` : ''}
+                            </div>
+                            <div style="margin-top: 10px; font-size: 0.85rem; color: #7c8792;">
+                                Project ID: ${project.id} | Site ID: ${site.id}
+                            </div>
                         </div>
                     </div>
                 `;
@@ -623,20 +642,23 @@
                 
                 html += `
                     <div class="result-item">
-                        <div class="result-title">${site.title || 'Untitled Project'}</div>
-                        <div class="result-meta">
-                            <div class="user-info">
-                                <img src="https://images.websim.com/avatar/${project.created_by.username}" 
-                                     alt="${project.created_by.username}" class="user-avatar">
-                                <span class="username">@${project.created_by.username}</span>
+                        <img src="https://images.websim.com/v1/site/${site.id}/600" alt="${site.title || 'Project thumbnail'}" class="result-thumbnail">
+                        <div class="result-item-content">
+                            <div class="result-title">${site.title || 'Untitled Project'}</div>
+                            <div class="result-meta">
+                                <div class="user-info">
+                                    <img src="https://images.websim.com/avatar/${project.created_by.username}" 
+                                         alt="${project.created_by.username}" class="user-avatar">
+                                    <span class="username">@${project.created_by.username}</span>
+                                </div>
+                                <span>Result #${index + 1}</span>
+                                <a href="https://websim.com/c/${site.id}" target="_blank" style="color: #667eea;">View Project</a>
                             </div>
-                            <span>Result #${index + 1}</span>
-                            <a href="https://websim.com/c/${site.id}" target="_blank" style="color: #667eea;">View Project</a>
-                        </div>
-                        <div class="result-stats">
-                            <div class="stat">👀 ${item.views} views</div>
-                            <div class="stat">❤️ ${item.likes} likes</div>
-                            <div class="stat">💬 ${item.comments} comments</div>
+                            <div class="result-stats">
+                                <div class="stat">👀 ${item.views} views</div>
+                                <div class="stat">❤️ ${item.likes} likes</div>
+                                <div class="stat">💬 ${item.comments} comments</div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -761,24 +783,27 @@
             let html = `
                 <div class="api-endpoint">GET /api/v1/projects/${project.id}</div>
                 <div class="result-item">
-                    <div class="result-title">${project.title || 'Untitled Project'}</div>
-                    <div class="result-meta">
-                        <div class="user-info">
-                            <img src="https://images.websim.com/avatar/${project.created_by.username}" 
-                                 alt="${project.created_by.username}" class="user-avatar">
-                            <span class="username">@${project.created_by.username}</span>
+                    ${site ? `<img src="https://images.websim.com/v1/site/${site.id}/600" alt="${site.title || 'Project thumbnail'}" class="result-thumbnail" style="width: 240px; height: 135px;">` : ''}
+                    <div class="result-item-content">
+                        <div class="result-title">${project.title || 'Untitled Project'}</div>
+                        <div class="result-meta">
+                            <div class="user-info">
+                                <img src="https://images.websim.com/avatar/${project.created_by.username}" 
+                                     alt="${project.created_by.username}" class="user-avatar">
+                                <span class="username">@${project.created_by.username}</span>
+                            </div>
+                            <span>Created: ${new Date(project.created_at).toLocaleDateString()}</span>
+                            <span>Updated: ${new Date(project.updated_at).toLocaleDateString()}</span>
                         </div>
-                        <span>Created: ${new Date(project.created_at).toLocaleDateString()}</span>
-                        <span>Updated: ${new Date(project.updated_at).toLocaleDateString()}</span>
+                        <div class="result-stats">
+                            <div class="stat">👀 ${project.stats.views} total views</div>
+                            <div class="stat">❤️ ${project.stats.likes} likes</div>
+                            <div class="stat">💬 ${project.stats.comments} comments</div>
+                            <div class="stat">🔄 Version ${project.current_version}</div>
+                            <div class="stat">📊 ${project.visibility} visibility</div>
+                        </div>
+                        ${project.description ? `<p style="margin-top: 10px; color: #a0a6b0;">${project.description}</p>` : ''}
                     </div>
-                    <div class="result-stats">
-                        <div class="stat">👀 ${project.stats.views} total views</div>
-                        <div class="stat">❤️ ${project.stats.likes} likes</div>
-                        <div class="stat">💬 ${project.stats.comments} comments</div>
-                        <div class="stat">🔄 Version ${project.current_version}</div>
-                        <div class="stat">📊 ${project.visibility} visibility</div>
-                    </div>
-                    ${project.description ? `<p style="margin-top: 10px; color: #a0a6b0;">${project.description}</p>` : ''}
                 </div>
             `;
             
@@ -791,10 +816,13 @@
                 statsData.daily_stats.slice(-7).forEach(day => {
                     html += `
                         <div class="result-item">
-                            <div class="result-title">${day.day}</div>
-                            <div class="result-stats">
-                                <div class="stat">👀 ${day.views || 0} views</div>
-                                <div class="stat">💰 ${(day.engagement_rewards_earned || 0).toFixed(2)} rewards</div>
+                            <img src="https://images.websim.com/v1/site/${day.site_id}/600" alt="${day.site_title || 'Project thumbnail'}" class="result-thumbnail">
+                            <div class="result-item-content">
+                                <div class="result-title">${day.site_title || 'Untitled'}</div>
+                                <div class="result-stats">
+                                    <div class="stat">👀 ${day.views || 0} views</div>
+                                    <div class="stat">💰 ${(day.engagement_rewards_earned || 0).toFixed(2)} rewards</div>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -808,7 +836,9 @@
                     html += `
                         <div class="result-item">
                             <div class="result-title">${ref.referrer || 'Direct'}</div>
-                            <div class="stat">👀 ${ref.views} views</div>
+                            <div class="result-stats">
+                                <div class="stat">👀 ${ref.views} views</div>
+                            </div>
                         </div>
                     `;
                 });
@@ -896,17 +926,23 @@
                 html += `<h3 style="margin: 20px 0 15px 0; color: #fff;">Recent Projects</h3>`;
                 projectsData.projects.data.forEach(projectItem => {
                     const project = projectItem.project;
+                    const site = projectItem.site;
+                    if (!site) return;
+                    
                     html += `
                         <div class="result-item">
-                            <div class="result-title">${project.title || 'Untitled Project'}</div>
-                            <div class="result-meta">
-                                <span>Created: ${new Date(project.created_at).toLocaleDateString()}</span>
-                                <span>Updated: ${new Date(project.updated_at).toLocaleDateString()}</span>
-                            </div>
-                            <div class="result-stats">
-                                <div class="stat">👀 ${project.stats.views} views</div>
-                                <div class="stat">❤️ ${project.stats.likes} likes</div>
-                                <div class="stat">💬 ${project.stats.comments} comments</div>
+                            <img src="https://images.websim.com/v1/site/${site.id}/600" alt="${site.title || 'Project thumbnail'}" class="result-thumbnail">
+                            <div class="result-item-content">
+                                <div class="result-title">${project.title || 'Untitled Project'}</div>
+                                <div class="result-meta">
+                                    <span>Created: ${new Date(project.created_at).toLocaleDateString()}</span>
+                                    <span>Updated: ${new Date(project.updated_at).toLocaleDateString()}</span>
+                                </div>
+                                <div class="result-stats">
+                                    <div class="stat">👀 ${project.stats.views} views</div>
+                                    <div class="stat">❤️ ${project.stats.likes} likes</div>
+                                    <div class="stat">💬 ${project.stats.comments} comments</div>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -988,11 +1024,12 @@
                 
                 Object.entries(results).forEach(([algorithm, data]) => {
                     const item = data[i];
-                    if (item) {
+                    if (item && item.site) {
                         html += `
-                            <div class="result-item" style="margin: 0;">
-                                <div style="font-weight: bold; color: #667eea; margin-bottom: 5px;">${algorithm.toUpperCase()}</div>
-                                <div style="font-size: 0.9rem; margin-bottom: 5px;">${item.site.title || 'Untitled'}</div>
+                            <div class="result-item" style="margin: 0; flex-direction: column; align-items: stretch; gap: 5px;">
+                                <div style="font-weight: bold; color: #667eea;">${algorithm.toUpperCase()}</div>
+                                <img src="https://images.websim.com/v1/site/${item.site.id}/600" alt="${item.site.title || 'Project thumbnail'}" class="result-thumbnail" style="width: 100%; height: 100px; margin-top: 5px;">
+                                <div style="font-size: 0.9rem; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.site.title || 'Untitled'}">${item.site.title || 'Untitled'}</div>
                                 <div style="font-size: 0.8rem; color: #7c8792;">@${item.project.created_by.username}</div>
                                 <div style="font-size: 0.75rem; color: #7c8792; margin-top: 5px;">
                                     👀 ${item.views} | ❤️ ${item.likes}
@@ -1000,7 +1037,7 @@
                             </div>
                         `;
                     } else {
-                        html += `<div class="result-item" style="margin: 0; opacity: 0.5;">No result</div>`;
+                        html += `<div class="result-item" style="margin: 0; opacity: 0.5; justify-content: center; align-items: center; min-height: 200px;">No result</div>`;
                     }
                 });
                 
@@ -1013,4 +1050,3 @@
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
-
