@@ -504,13 +504,13 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 
-                displayFeedResults(data, feedType);
+                displayFeedResults(data, feedType, url);
             } catch (error) {
                 showError('feedResults', error.message);
             }
         }
         
-        function displayFeedResults(data, feedType) {
+        function displayFeedResults(data, feedType, url) {
             const container = document.getElementById('feedResults');
             
             if (!data.feed || !data.feed.data.length) {
@@ -521,7 +521,7 @@
             const feedInfo = getFeedAlgorithmInfo(feedType);
             
             let html = `
-                <div class="api-endpoint">GET /api/v1/feed/trending?feed=${feedType}</div>
+                <div class="api-endpoint">GET ${url}</div>
                 <div class="feed-type-info">
                     <strong>${feedInfo.name}:</strong> ${feedInfo.description}
                 </div>
@@ -617,13 +617,13 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 
-                displaySearchResults(data, query, sort);
+                displaySearchResults(data, query, sort, url);
             } catch (error) {
                 showError('searchResults', error.message);
             }
         }
         
-        function displaySearchResults(data, query, sort) {
+        function displaySearchResults(data, query, sort, url) {
             const container = document.getElementById('searchResults');
             
             if (!data.feed || !data.feed.data.length) {
@@ -632,7 +632,7 @@
             }
             
             let html = `
-                <div class="api-endpoint">GET /api/v1/feed/search/${sort}/${encodeURIComponent(query)}</div>
+                <div class="api-endpoint">GET ${url}</div>
                 <p><strong>Search Results for "${query}":</strong> ${data.feed.data.length} projects (sorted by ${sort})</p>
             `;
             
@@ -671,20 +671,21 @@
             showLoading('searchResults');
             
             try {
-                const response = await fetch('/api/v1/search/top?limit=20');
+                const url = '/api/v1/search/top?limit=20';
+                const response = await fetch(url);
                 const data = await response.json();
                 
-                displayTopSearches(data);
+                displayTopSearches(data, url);
             } catch (error) {
                 showError('searchResults', error.message);
             }
         }
         
-        function displayTopSearches(data) {
+        function displayTopSearches(data, url) {
             const container = document.getElementById('searchResults');
             
             let html = `
-                <div class="api-endpoint">GET /api/v1/search/top</div>
+                <div class="api-endpoint">GET ${url}</div>
                 <p><strong>Top Search Queries Today:</strong></p>
             `;
             
@@ -713,20 +714,21 @@
             showLoading('searchResults');
             
             try {
-                const response = await fetch(`/api/v1/search/related?q=${encodeURIComponent(query)}&limit=15`);
+                const url = `/api/v1/search/related?q=${encodeURIComponent(query)}&limit=15`;
+                const response = await fetch(url);
                 const data = await response.json();
                 
-                displayRelatedKeywords(data, query);
+                displayRelatedKeywords(data, query, url);
             } catch (error) {
                 showError('searchResults', error.message);
             }
         }
         
-        function displayRelatedKeywords(data, query) {
+        function displayRelatedKeywords(data, query, url) {
             const container = document.getElementById('searchResults');
             
             let html = `
-                <div class="api-endpoint">GET /api/v1/search/related?q=${encodeURIComponent(query)}</div>
+                <div class="api-endpoint">GET ${url}</div>
                 <p><strong>Related Keywords for "${query}":</strong> ${data.total_results} total associations</p>
             `;
             
@@ -758,30 +760,36 @@
             
             try {
                 // Fetch project details
-                const projectResponse = await fetch(`/api/v1/projects/${projectId}`);
+                const projectUrl = `/api/v1/projects/${projectId}`;
+                const projectResponse = await fetch(projectUrl);
                 const projectData = await projectResponse.json();
                 
                 // Fetch project stats
-                const statsResponse = await fetch(`/api/v1/projects/${projectId}/stats`);
+                const statsUrl = `/api/v1/projects/${projectId}/stats`;
+                const statsResponse = await fetch(statsUrl);
                 const statsData = await statsResponse.json();
                 
                 // Fetch project comments
-                const commentsResponse = await fetch(`/api/v1/projects/${projectId}/comments?first=5`);
+                const commentsUrl = `/api/v1/projects/${projectId}/comments?first=5`;
+                const commentsResponse = await fetch(commentsUrl);
                 const commentsData = await commentsResponse.json();
                 
-                displayProjectAnalysis(projectData, statsData, commentsData);
+                const urls = { project: projectUrl, stats: statsUrl, comments: commentsUrl };
+                displayProjectAnalysis(projectData, statsData, commentsData, urls);
             } catch (error) {
                 showError('metadataResults', error.message);
             }
         }
         
-        function displayProjectAnalysis(projectData, statsData, commentsData) {
+        function displayProjectAnalysis(projectData, statsData, commentsData, urls) {
             const container = document.getElementById('metadataResults');
             const project = projectData.project;
             const site = projectData.site;
             
             let html = `
-                <div class="api-endpoint">GET /api/v1/projects/${project.id}</div>
+                <div class="api-endpoint">GET ${urls.project}</div>
+                <div class="api-endpoint">GET ${urls.stats}</div>
+                <div class="api-endpoint">GET ${urls.comments}</div>
                 <div class="result-item">
                     ${site ? `<img src="https://images.websim.com/v1/site/${site.id}/600" alt="${site.title || 'Project thumbnail'}" class="result-thumbnail" style="width: 240px; height: 135px;">` : ''}
                     <div class="result-item-content">
@@ -879,29 +887,35 @@
             
             try {
                 // Fetch user details
-                const userResponse = await fetch(`/api/v1/users/${username}`);
+                const userUrl = `/api/v1/users/${username}`;
+                const userResponse = await fetch(userUrl);
                 const userData = await userResponse.json();
                 
                 // Fetch user projects
-                const projectsResponse = await fetch(`/api/v1/users/${username}/projects?first=10&posted=true`);
+                const projectsUrl = `/api/v1/users/${username}/projects?first=10&posted=true`;
+                const projectsResponse = await fetch(projectsUrl);
                 const projectsData = await projectsResponse.json();
                 
                 // Fetch user stats
-                const statsResponse = await fetch(`/api/v1/users/${username}/stats`);
+                const statsUrl = `/api/v1/users/${username}/stats`;
+                const statsResponse = await fetch(statsUrl);
                 const statsData = await statsResponse.json();
                 
-                displayUserAnalysis(userData, projectsData, statsData);
+                const urls = { user: userUrl, projects: projectsUrl, stats: statsUrl };
+                displayUserAnalysis(userData, projectsData, statsData, urls);
             } catch (error) {
                 showError('metadataResults', error.message);
             }
         }
         
-        function displayUserAnalysis(userData, projectsData, statsData) {
+        function displayUserAnalysis(userData, projectsData, statsData, urls) {
             const container = document.getElementById('metadataResults');
             const user = userData.user;
             
             let html = `
-                <div class="api-endpoint">GET /api/v1/users/${user.username}</div>
+                <div class="api-endpoint">GET ${urls.user}</div>
+                <div class="api-endpoint">GET ${urls.projects}</div>
+                <div class="api-endpoint">GET ${urls.stats}</div>
                 <div class="result-item">
                     <div class="result-title">@${user.username}</div>
                     <div class="result-meta">
