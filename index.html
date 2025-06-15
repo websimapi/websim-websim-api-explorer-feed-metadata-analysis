@@ -357,6 +357,7 @@
                         <option value="day">Today</option>
                         <option value="week">This Week (inclusive)</option>
                         <option value="month">This Month</option>
+                        <option value="all-three">Today, Week & Month</option>
                     </select>
                 </div>
                 
@@ -497,8 +498,9 @@
             const isMultiplayer = document.getElementById('isMultiplayer').value;
             
             try {
+                const baseUrl = `/api/v1/feed/trending?feed=${feedType}&limit=${limit}${isMultiplayer ? `&is_multiplayer=${isMultiplayer}` : ''}`;
+
                 if (range === 'week') { // This is for "This Week (inclusive)"
-                    const baseUrl = `/api/v1/feed/trending?feed=${feedType}&limit=${limit}${isMultiplayer ? `&is_multiplayer=${isMultiplayer}` : ''}`;
                     const weekUrl = `${baseUrl}&range=week`;
                     const dayUrl = `${baseUrl}&range=day`;
 
@@ -533,11 +535,56 @@
                     const description = `Custom logic for 'This Week (inclusive)':\n1. GET ${dayUrl}\n2. GET ${weekUrl}\nResults merged, with "today" taking precedence.`;
                     displayFeedResults(combinedData, feedType, description);
 
-                } else {
-                    let url = `/api/v1/feed/trending?feed=${feedType}&range=${range}&limit=${limit}`;
-                    if (isMultiplayer) {
-                        url += `&is_multiplayer=${isMultiplayer}`;
+                } else if (range === 'all-three') {
+                    const dayUrl = `${baseUrl}&range=day`;
+                    const weekUrl = `${baseUrl}&range=week`;
+                    const monthUrl = `${baseUrl}&range=month`;
+
+                    const [dayResponse, weekResponse, monthResponse] = await Promise.all([
+                        fetch(dayUrl),
+                        fetch(weekUrl),
+                        fetch(monthUrl)
+                    ]);
+
+                    if (!dayResponse.ok || !weekResponse.ok || !monthResponse.ok) {
+                        let error = 'Failed to fetch combined data. ';
+                        if (!dayResponse.ok) error += `Day data: ${dayResponse.statusText}. `;
+                        if (!weekResponse.ok) error += `Week data: ${weekResponse.statusText}. `;
+                        if (!monthResponse.ok) error += `Month data: ${monthResponse.statusText}.`;
+                        throw new Error(error);
                     }
+
+                    const dayData = await dayResponse.json();
+                    const weekData = await weekResponse.json();
+                    const monthData = await monthResponse.json();
+
+                    const dayResults = dayData.feed?.data || [];
+                    const weekResults = weekData.feed?.data || [];
+                    const monthResults = monthData.feed?.data || [];
+
+                    const combinedResults = [...dayResults];
+                    const projectIds = new Set(dayResults.map(item => item.project.id));
+
+                    for (const item of weekResults) {
+                        if (item.project && !projectIds.has(item.project.id)) {
+                            combinedResults.push(item);
+                            projectIds.add(item.project.id);
+                        }
+                    }
+                    
+                    for (const item of monthResults) {
+                        if (item.project && !projectIds.has(item.project.id)) {
+                            combinedResults.push(item);
+                            projectIds.add(item.project.id);
+                        }
+                    }
+
+                    const combinedData = { feed: { data: combinedResults } };
+                    const description = `Custom logic for 'Today, Week & Month':\n1. GET ${dayUrl}\n2. GET ${weekUrl}\n3. GET ${monthUrl}\nResults merged, with precedence: Today > Week > Month.`;
+                    displayFeedResults(combinedData, feedType, description);
+                }
+                else {
+                    const url = `${baseUrl}&range=${range}`;
                     
                     const response = await fetch(url);
                      if (!response.ok) {
